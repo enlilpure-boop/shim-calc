@@ -273,20 +273,7 @@
       </div>
     </div>
 
-    <div class="legend" style="margin-top:14px;">
-      <div class="legend-item">
-        <div class="legend-dot" style="background:var(--green)"></div>
-        <span class="legend-text">± 0.5 mm 以內　正常</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background:var(--amber)"></div>
-        <span class="legend-text">± 1.0 mm 以內　需注意</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background:var(--red)"></div>
-        <span class="legend-text">超過 ± 1.0 mm　需調整</span>
-      </div>
-    </div>
+
 
     <!-- TABS -->
     <div class="tabs">
@@ -386,12 +373,6 @@
   }
 
   // ── Calculate ──
-  function shimStyle(v) {
-    if (Math.abs(v) <= 0.5) return { color: '#22c55e', bg: 'rgba(34,197,94,0.1)', border: 'rgba(34,197,94,0.3)' };
-    if (Math.abs(v) <= 1.0) return { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)' };
-    return { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)' };
-  }
-
   function calculate() {
     const adv = parseFloat(document.getElementById('advAngle').value) || 0;
     const gz  = parseFloat(document.getElementById('gaugeZero').value) || 0;
@@ -414,11 +395,10 @@
         return;
       }
       const shim = val - tgt;
-      const s = shimStyle(shim);
       el.textContent = (shim >= 0 ? '+' : '') + shim.toFixed(2) + ' mm';
-      el.style.color = s.color;
-      el.style.background = s.bg;
-      el.style.borderColor = s.border;
+      el.style.color = '#f1f5f9';
+      el.style.background = 'rgba(148,163,184,0.07)';
+      el.style.borderColor = 'rgba(148,163,184,0.2)';
     });
   }
 
