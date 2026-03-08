@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="墊片設定" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>二期燃油正時調整墊片設定</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #38bdf8;
+      --purple: #818cf8;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --bg: #0a0f1e;
+      --card: rgba(15,23,42,0.92);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --dim: #475569;
+      --border: rgba(148,163,184,0.15);
+    }
+
+    html, body {
+      height: 100%;
+      background: linear-gradient(160deg, #0a0f1e 0%, #0f172a 60%, #0a1628 100%);
+      background-attachment: fixed;
+      font-family: 'Noto Sans TC', sans-serif;
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      padding: env(safe-area-inset-top, 16px) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+      overflow-x: hidden;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,15,30,0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .topbar-accent {
+      width: 3px; height: 32px;
+      background: linear-gradient(to bottom, var(--blue), var(--purple));
+      border-radius: 2px; flex-shrink: 0;
+    }
+    .topbar-label { color: var(--blue); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; }
+    .topbar-title { font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
+
+    /* ── INSTALL BANNER ── */
+    #installBanner {
+      display: none;
+      background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(129,140,248,0.12));
+      border-bottom: 1px solid rgba(56,189,248,0.25);
+      padding: 10px 16px;
+      align-items: center; gap: 10px;
+    }
+    #installBanner.show { display: flex; }
+    .install-text { flex: 1; font-size: 13px; color: var(--muted); }
+    .install-text strong { color: var(--blue); }
+    .btn-install {
+      background: var(--blue); color: #0a0f1e;
+      border: none; border-radius: 20px;
+      padding: 6px 16px; font-size: 13px; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+      font-family: 'Noto Sans TC', sans-serif;
+    }
+    .btn-dismiss {
+      background: none; border: none; color: var(--dim);
+      font-size: 18px; cursor: pointer; padding: 0 4px;
+    }
+
+    /* ── SCROLL AREA ── */
+    .scroll-area {
+      padding: 16px 14px 32px;
+      max-width: 640px; margin: 0 auto;
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      position: relative; overflow: hidden;
+    }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    }
+    .card.blue::before { background: linear-gradient(to right, var(--blue), transparent); }
+    .card.purple::before { background: linear-gradient(to right, var(--purple), transparent); }
+
+    /* ── STEP HEADER ── */
+    .step-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .step-badge {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; flex-shrink: 0;
+    }
+    .step-badge.blue { background: rgba(56,189,248,0.12); border: 1.5px solid var(--blue); color: var(--blue); }
+    .step-badge.purple { background: rgba(129,140,248,0.12); border: 1.5px solid var(--purple); color: var(--purple); }
+    .step-title { font-size: 15px; font-weight: 600; }
+
+    /* ── INPUTS ── */
+    .field { margin-bottom: 12px; }
+    .field-label { color: var(--muted); font-size: 12px; margin-bottom: 6px; display: block; }
+    input[type="number"] {
+      background: rgba(148,163,184,0.07);
+      border: 1px solid rgba(148,163,184,0.22);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 16px; /* 16px prevents iOS zoom */
+      font-family: 'JetBrains Mono', monospace;
+      padding: 10px 14px;
+      width: 100%; outline: none;
+      text-align: center;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+    input[type="number"]:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(56,189,248,0.15);
+    }
+
+    /* ── RESULT BOXES ── */
+    .result-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .result-box { border-radius: 10px; padding: 12px 14px; }
+    .result-box.blue { background: rgba(56,189,248,0.07); border: 1px solid rgba(56,189,248,0.22); }
+    .result-box.purple { background: rgba(168,85,247,0.07); border: 1px solid rgba(168,85,247,0.22); }
+    .result-box.green { background: rgba(34,197,94,0.07); border: 1px solid rgba(34,197,94,0.22); }
+    .result-label { color: var(--dim); font-size: 11px; margin-bottom: 5px; }
+    .result-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px; font-weight: 700;
+    }
+    .result-value.blue { color: var(--blue); }
+    .result-value.purple { color: #a855f7; }
+    .result-value.green { color: var(--green); }
+    .result-formula { color: var(--dim); font-size: 11px; margin-top: 3px; }
+
+    /* ── GAUGE ROW ── */
+    .gauge-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+
+    /* ── LEGEND ── */
+    .legend {
+      display: flex; flex-direction: column; gap: 6px;
+      background: rgba(30,41,59,0.5);
+      border-radius: 10px; padding: 12px 14px;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 8px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .legend-text { color: var(--muted); font-size: 13px; }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex; gap: 8px; margin-bottom: 14px;
+    }
+    .tab {
+      flex: 1; padding: 10px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: rgba(30,41,59,0.4);
+      color: var(--dim); font-size: 14px; font-weight: 600;
+      cursor: pointer; text-align: center;
+      font-family: 'Noto Sans TC', sans-serif;
+      transition: all 0.2s;
+    }
+    .tab.active.a { background: rgba(56,189,248,0.12); border-color: var(--blue); color: var(--blue); }
+    .tab.active.b { background: rgba(168,85,247,0.12); border-color: #a855f7; color: #a855f7; }
+
+    /* ── CYL GRID ── */
+    .cyl-panel { display: none; }
+    .cyl-panel.active { display: block; }
+
+    .cyl-grid {
+      display: grid;
+      grid-template-columns: 44px 1fr 1fr;
+      gap: 8px 8px;
+      align-items: center;
+    }
+    .col-head { color: var(--dim); font-size: 11px; text-align: center; padding-bottom: 2px; }
+    .cyl-id {
+      text-align: center; color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; font-weight: 600;
+    }
+    .shim-result {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px; font-weight: 700;
+      padding: 8px 4px; border-radius: 8px;
+      transition: all 0.25s;
+      border: 1px solid transparent;
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-accent"></div>
+  <div>
+    <div class="topbar-label">二期燃油系統</div>
+    <div class="topbar-title">正時調整墊片設定</div>
+  </div>
+</div>
+
+<!-- INSTALL BANNER -->
+<div id="installBanner">
+  <div class="install-text"><strong>安裝 App</strong>　加到桌面，離線可用</div>
+  <button class="btn-install" id="btnInstall">安裝</button>
+  <button class="btn-dismiss" id="btnDismiss">✕</button>
+</div>
+
+<!-- SCROLL AREA -->
+<div class="scroll-area">
+
+  <!-- STEP 1 -->
+  <div class="card blue">
+    <div class="step-header">
+      <div class="step-badge blue">①</div>
+      <div class="step-title">順向盤俥至設定角度</div>
+    </div>
+    <div class="field">
+      <label class="field-label">噴油提前角 (°)</label>
+      <input type="number" id="advAngle" value="19" step="0.1" inputmode="decimal" oninput="calculate()" />
+    </div>
+    <div class="result-row">
+      <div class="result-box blue">
+        <div class="result-label">A 側水平儀數值</div>
+        <div class="result-value blue" id="sideA">48.5°</div>
+        <div class="result-formula" id="formulaA">90 − 22.5 − 19</div>
+      </div>
+      <div class="result-box purple">
+        <div class="result-label">B 側水平儀數值</div>
+        <div class="result-value purple" id="sideB">86.5°</div>
+        <div class="result-formula" id="formulaB">90 − 22.5 + 19</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="card purple">
+    <div class="step-header">
+      <div class="step-badge purple">②</div>
+      <div class="step-title">確認調整墊片厚度</div>
+    </div>
+
+    <div class="gauge-row">
+      <div class="field" style="margin-bottom:0">
+        <label class="field-label">量錶歸零點設定值 (mm)</label>
+        <input type="number" id="gaugeZero" value="20" step="0.1" inputmode="decimal" oninput="calculate()" />
+      </div>
+      <div class="result-box green">
+        <div class="result-label">目標設定值</div>
+        <div class="result-value green" id="targetVal">18.5 mm</div>
+        <div class="result-formula" id="formulaTarget">= 20 − 1.5</div>
+      </div>
+    </div>
+
+    <div class="legend" style="margin-top:14px;">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--green)"></div>
+        <span class="legend-text">± 0.5 mm 以內　正常</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--amber)"></div>
+        <span class="legend-text">± 1.0 mm 以內　需注意</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--red)"></div>
+        <span class="legend-text">超過 ± 1.0 mm　需調整</span>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active a" id="tabA" onclick="switchTab('A')">A 側</button>
+      <button class="tab b" id="tabB" onclick="switchTab('B')">B 側</button>
+    </div>
+
+    <!-- A Panel -->
+    <div class="cyl-panel active" id="panelA">
+      <div class="cyl-grid">
+        <div class="col-head">缸號</div>
+        <div class="col-head">量錶讀值</div>
+        <div class="col-head">墊片厚度</div>
+        <div class="cyl-id">A1</div>
+        <input type="number" id="a1" value="22" step="0.1" inputmode="decimal" oninput="calculate()" />
+        <div class="shim-result" id="shim-a1">—</div>
+        <div class="cyl-id">A2</div>
+        <input type="number" id="a2" value="19.8" step="0.1" inputmode="decimal" oninput="calculate()" />
+        <div class="shim-result" id="shim-a2">—</div>
+        <div class="cyl-id">A3</div>
+        <input type="number" id="a3" value="21.5" step="0.1" inputmode="decimal" oninput="calculate()" />
+        <div class="shim-result" id="shim-a3">—</div>
+        <div class="cyl-id">A4</div>
+        <input type="number" id="a4" value="21.8" step="0.1" inputmode="decimal" oninput="calculate()" />
+        <div class="shim-result" id="shim-a4">—</div>
+        <div class="cyl-id">A5</div>
+        <input type="number" id="a5" value="21.2" step="0.1" inputmode="decimal" oninput="calculate()" />
+        <div class="shim-result" id="shim-a5">—</div>
+        <div class="cyl-id">A6</div>
+        <input type="number" id="a6" value="21.8" step="0.1" inputmode="decimal" oninput="calculate()" />
+        <div class="shim-result" id="shim-a6">—</div>
+      </div>
+    </div>
+
+    <!-- B Panel -->
+    <div class="cyl-panel" id="panelB">
+      <div class="cyl-grid">
+        <div class="col-head">缸號</div>
+        <div class="col-head">量錶讀值</div>
+        <div class="col-head">墊片厚度</div>
+        <div class="cyl-id">B1</div>
+        <input type="number" id="b1" value="22.5" step="0.1" inputmode="decimal" oninput="calculate()" />
+        <div class="shim-result" id="shim-b1">—</div>
+        <div class="cyl-id">B2</div>
+        <input type="number" id="b2" value="21.7" step="0.1" inputmode="decimal" oninput="calculate()" />
+        <div class="shim-result" id="shim-b2">—</div>
+        <div class="cyl-id">B3</div>
+        <input type="number" id="b3" value="22.1" step="0.1" inputmode="decimal" oninput="calculate()" />
+        <div class="shim-result" id="shim-b3">—</div>
+        <div class="cyl-id">B4</div>
+        <input type="number" id="b4" value="22.1" step="0.1" inputmode="decimal" oninput="calculate()" />
+        <div class="shim-result" id="shim-b4">—</div>
+        <div class="cyl-id">B5</div>
+        <input type="number" id="b5" value="22.3" step="0.1" inputmode="decimal" oninput="calculate()" />
+        <div class="shim-result" id="shim-b5">—</div>
+        <div class="cyl-id">B6</div>
+        <input type="number" id="b6" value="21.8" step="0.1" inputmode="decimal" oninput="calculate()" />
+        <div class="shim-result" id="shim-b6">—</div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- end scroll-area -->
+
+<script>
+  // ── Service Worker ──
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  // ── PWA Install ──
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBanner').classList.add('show');
+  });
+  document.getElementById('btnInstall').addEventListener('click', () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        deferredPrompt = null;
+        document.getElementById('installBanner').classList.remove('show');
+      });
+    }
+  });
+  document.getElementById('btnDismiss').addEventListener('click', () => {
+    document.getElementById('installBanner').classList.remove('show');
+  });
+
+  // ── Tab Switch ──
+  function switchTab(side) {
+    document.getElementById('tabA').className = 'tab' + (side === 'A' ? ' active a' : '');
+    document.getElementById('tabB').className = 'tab' + (side === 'B' ? ' active b' : '');
+    document.getElementById('panelA').className = 'cyl-panel' + (side === 'A' ? ' active' : '');
+    document.getElementById('panelB').className = 'cyl-panel' + (side === 'B' ? ' active' : '');
+  }
+
+  // ── Calculate ──
+  function shimStyle(v) {
+    if (Math.abs(v) <= 0.5) return { color: '#22c55e', bg: 'rgba(34,197,94,0.1)', border: 'rgba(34,197,94,0.3)' };
+    if (Math.abs(v) <= 1.0) return { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)' };
+    return { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)' };
+  }
+
+  function calculate() {
+    const adv = parseFloat(document.getElementById('advAngle').value) || 0;
+    const gz  = parseFloat(document.getElementById('gaugeZero').value) || 0;
+    const tgt = gz - 1.5;
+
+    document.getElementById('sideA').textContent    = (90 - 22.5 - adv).toFixed(1) + '°';
+    document.getElementById('sideB').textContent    = (90 - 22.5 + adv).toFixed(1) + '°';
+    document.getElementById('formulaA').textContent = `90 − 22.5 − ${adv}`;
+    document.getElementById('formulaB').textContent = `90 − 22.5 + ${adv}`;
+    document.getElementById('targetVal').textContent   = tgt.toFixed(1) + ' mm';
+    document.getElementById('formulaTarget').textContent = `= ${gz} − 1.5`;
+
+    ['a1','a2','a3','a4','a5','a6','b1','b2','b3','b4','b5','b6'].forEach(id => {
+      const inp = document.getElementById(id);
+      const el  = document.getElementById('shim-' + id);
+      const val = parseFloat(inp.value);
+      if (isNaN(val) || inp.value === '') {
+        el.textContent = '—';
+        el.style.cssText = 'color:#64748b;background:transparent;border-color:transparent';
+        return;
+      }
+      const shim = val - tgt;
+      const s = shimStyle(shim);
+      el.textContent = (shim >= 0 ? '+' : '') + shim.toFixed(2) + ' mm';
+      el.style.color = s.color;
+      el.style.background = s.bg;
+      el.style.borderColor = s.border;
+    });
+  }
+
+  calculate();
+</script>
+</body>
+</html>
